@@ -25,17 +25,14 @@ npm run dist
 ## 📁 Структура проекта
 
 electron-image-resizer/
-│
-├── .gitignore # Игнор node_modules ✓
-├── main.js # Главный процесс Electron ✓
-├── preload.js # IPC мост Electron ✓
-├── package.json # Конфигурация npm ✓
-├── package-lock.json # Фиксация зависимостей ✓
-│
-├── node_modules/ # Локальные зависимости (игнор)
-│
-└── renderer/ # Frontend код
-└── (HTML/CSS/JS)
+├── .gitignore
+├── main.js
+├── preload.js  
+├── package.json
+├── package-lock.json
+├── node_modules/ (игнор)
+└── renderer/
+
 
 ## 🛠️ Стек технологий
 📱 Electron • 🔧 Node.js • 🎨 HTML/CSS/JS • 🖼️ Sharp
