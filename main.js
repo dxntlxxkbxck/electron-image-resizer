@@ -1,82 +1,150 @@
-const { app, BrowserWindow, Menu} = require('electron');
 const path = require('path');
+const os = require('os');
+const fs = require('fs');
+const resizeImg = require('resize-img');
+const { app, BrowserWindow, Menu, ipcMain, shell } = require('electron');
 
-const isDev = process.env.NODE_END !== 'development' // or 'development/production
+const isDev = process.env.NODE_ENV !== 'production';
 const isMac = process.platform === 'darwin';
 
-// create the main menu
+let mainWindow;
+let aboutWindow;
+
+// Main Window
 function createMainWindow() {
-    const mainWindow = new BrowserWindow ({
-        title: 'Image Resizer',
-        width: isDev? 1000 : 500,
-        height: 800,
-        webPreferences: {
-            contextIsolation: true,
-            nodeIntegration: true,
-            preload: path.join(__dirname, 'preload.js')
-        }
-    });
+  mainWindow = new BrowserWindow({
+    width: isDev ? 1000 : 500,
+    height: 600,
+    icon: `${__dirname}/assets/icons/Icon_256x256.png`,
+    resizable: isDev,
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+      devTools: false,  // ✅ DevTools отключены
+      preload: path.join(__dirname, 'preload.js'),
+    },
+  });
 
-    // Open devtools if in dev env
-    if (isDev) {
-        mainWindow.webContents.openDevTools();
-    }
-
-    mainWindow.loadFile(path.join(__dirname, './renderer/index.html'));
+  mainWindow.loadFile(path.join(__dirname, './renderer/index.html'));
 }
 
-// crate about window
+// About Window
 function createAboutWindow() {
-    const aboutWindow = new BrowserWindow({
-        title: 'About Image Resizer',
-        width: 300,
-        height: 300
-    });
+  aboutWindow = new BrowserWindow({
+    width: 300,
+    height: 300,
+    title: 'О программе',
+    icon: `${__dirname}/assets/icons/Icon_256x256.png`,
+    parent: mainWindow,
+    modal: true,
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+      preload: path.join(__dirname, 'preload.js'),
+    },
+  });
 
-    aboutWindow.loadFile(path.join(__dirname, './renderer/about.html'));
+  aboutWindow.loadFile(path.join(__dirname, './renderer/about.html'));
 }
 
-// app is ready
-app.whenReady().then(() => {
-    createMainWindow();
+// Запуск приложения
+app.on('ready', () => {
+  createMainWindow();
 
-    // implement menu
-    const mainMenu = Menu.buildFromTemplate(menu);
-    Menu.setApplicationMenu(mainMenu);
+  const mainMenu = Menu.buildFromTemplate(menu);
+  Menu.setApplicationMenu(mainMenu);
 
-    app.on('activate', () => {
-        if (BrowserWindow.getAllWindows().length === 0) {
-            createMainWindow()
-        }
-    })
+  mainWindow.on('closed', () => (mainWindow = null));
 });
 
-// menu template
+// Меню
 const menu = [
-        ...(isMac ? [{
-            label: app.name,
-            submenu: [
-                {
-                    label: 'About',
-                    click: createAboutWindow
-                },
-            ],
-        }]
+  ...(isMac
+    ? [
+        {
+          label: app.name,
+          submenu: [
+            {
+              label: 'О программе',
+              click: createAboutWindow,
+            },
+          ],
+        },
+      ]
     : []),
-    {
-        role: 'fileMenu',
-    },
-    ...(!isMac ? [{
-        label: 'Help',
-        submenu: [{
-            label: 'About',
-            click: createAboutWindow
-        }]
-    }] : [])
+  {
+    role: 'fileMenu',
+  },
+  ...(!isMac
+    ? [
+        {
+          label: 'Справка',
+          submenu: [
+            {
+              label: 'О программе',
+              click: createAboutWindow,
+            },
+          ],
+        },
+      ]
+    : []),
 ];
 
-app.on('window-all-closed', () => {
-  if (!isMac) {
-    app.quit()
+// ✅ IPC обработчик - НОВЫЙ для buffer
+ipcMain.on('image:resize', async (e, options) => {
+  console.log(`Получено: ${options.filename} ${options.width}x${options.height}`);
+  
+  // Проверяем наличие данных
+  if (!options.buffer || !options.filename) {
+    mainWindow.webContents.send('image:error', 'Неверные данные файла');
+    return;
   }
+
+  options.dest = path.join(os.homedir(), 'imageresizer');
+  
+  try {
+    await resizeImage(options);
+  } catch (err) {
+    console.error('Общая ошибка:', err.message);
+    mainWindow.webContents.send('image:error', err.message);
+  }
+});
+
+// ✅ НОВАЯ функция resizeImage - работает с buffer!
+async function resizeImage({ buffer, filename, height, width, dest }) {
+  try {
+    // Преобразуем ArrayBuffer в Node.js Buffer
+    const imgBuffer = Buffer.from(buffer);
+    
+    // Изменяем размер изображения
+    const newPath = await resizeImg(imgBuffer, {
+      width: +width,
+      height: +height,
+    });
+
+    // Создаем папку если нет
+    if (!fs.existsSync(dest)) {
+      fs.mkdirSync(dest, { recursive: true });
+    }
+
+    // Сохраняем файл
+    const outputPath = path.join(dest, filename);
+    fs.writeFileSync(outputPath, newPath);
+    
+    console.log(`✅ Сохранено: ${outputPath}`);
+    mainWindow.webContents.send('image:done');
+    shell.openPath(dest); // Открываем папку
+  } catch (err) {
+    console.error('resizeImage ошибка:', err);
+    throw new Error(`Ошибка обработки: ${err.message}`);
+  }
+}
+
+// Закрытие приложения
+app.on('window-all-closed', () => {
+  if (!isMac) app.quit();
+});
+
+app.on('activate', () => {
+  if (BrowserWindow.getAllWindows().length === 0) createMainWindow();
 });

@@ -5,7 +5,8 @@
   "description": "App to resize image",
   "main": "main.js",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "dev": "set NODE_ENV=development && electron ."
   },
   "author": "",
   "license": "MIT",
