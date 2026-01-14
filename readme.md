@@ -27,12 +27,12 @@ npm run dist
 electron-image-resizer/
 ├── .gitignore
 ├── main.js
-├── preload.js  
+├── node_modules/
 ├── package.json
 ├── package-lock.json
-├── node_modules/ (игнор)
+├── preload.js
+├── README.md
 └── renderer/
-
 
 ## 🛠️ Стек технологий
 📱 Electron • 🔧 Node.js • 🎨 HTML/CSS/JS • 🖼️ Sharp
