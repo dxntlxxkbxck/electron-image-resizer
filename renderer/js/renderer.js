@@ -7,7 +7,7 @@ const heightInput = document.querySelector('#height');
 
 console.log('✅ Renderer.js загружен');
 
-// ✅ Toastify уведомления в правом верхнем углу
+// Toastify уведомления
 function showToast(type, message) {
   const toastConfig = {
     text: message,
@@ -96,7 +96,7 @@ function resizeImage(e) {
   reader.readAsArrayBuffer(file);
 }
 
-// ✅ Обработчики IPC (ТОЛЬКО для main.js ответов)
+// Обработчики IPC
 if (window.electronAPI) {
   window.electronAPI.onDone(() => {
     showToast('success', `✅ Готово! ${widthInput.value}×${heightInput.value}`);

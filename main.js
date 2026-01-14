@@ -20,7 +20,7 @@ function createMainWindow() {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      devTools: false,  // ✅ DevTools отключены
+      devTools: false,
       preload: path.join(__dirname, 'preload.js'),
     },
   });
@@ -90,7 +90,7 @@ const menu = [
     : []),
 ];
 
-// ✅ IPC обработчик - НОВЫЙ для buffer
+// IPC обработчик
 ipcMain.on('image:resize', async (e, options) => {
   console.log(`Получено: ${options.filename} ${options.width}x${options.height}`);
   
@@ -110,10 +110,10 @@ ipcMain.on('image:resize', async (e, options) => {
   }
 });
 
-// ✅ НОВАЯ функция resizeImage - работает с buffer!
+// resizeImage
 async function resizeImage({ buffer, filename, height, width, dest }) {
   try {
-    // Преобразуем ArrayBuffer в Node.js Buffer
+    // Buffer
     const imgBuffer = Buffer.from(buffer);
     
     // Изменяем размер изображения
