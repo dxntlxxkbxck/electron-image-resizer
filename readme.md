@@ -44,9 +44,6 @@ electron-image-resizer/
 4. git push origin feature/amazing-feature
 5. Создай Pull Request ✨
 
-## 📄 Лицензия
-MIT
-
 ---
 
 <img src="https://img.shields.io/github/stars/dxntlxxkbxck/electron-image-resizer?style=social" alt="stars">
